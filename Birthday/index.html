@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body{
+            margin: 0;
+            background-color: rgb(226, 214, 214);
+        }
+        canvas{
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url('blue.jpg');
+            background-size: cover;
+            background-color: aqua;
+            display: block;
+        }
+        .login-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(232, 42, 121, 0.42);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            margin: 20px;
+            
+        }
+        label{
+            font-size: 25px;
+            padding:10px;
+            color: rgb(0, 0, 0);
+            font-weight: bolder;
+        }
+        .login-container input {
+            width: 250px;
+            height: 40px;
+            border-radius: 8px;
+            border: none;
+            font-size:15px;
+            background-color: rgb(225, 238, 238);
+            margin: 10px;
+            padding: 4px;
+        }
+        .login-container button {
+            width: 190px;
+            height:40px;
+            border-radius: 5px;
+            border:2px solid white;
+            background-color: rgba(72, 162, 247, 0.575);
+            margin-top: 30px;
+            margin-left: 40px;
+            color: aliceblue;
+            font-weight: bolder;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        #login-btn:hover{
+            background:linear-gradient(55deg,rgb(0, 166, 255),rgb(0, 17, 255),rgb(6, 248, 131));
+        }
+
+        .container{
+            display: flex;
+            justify-content: center;
+            /* background: #000; */
+            margin-top: 50px;
+            margin-bottom: 10%;
+        }
+    </style>
+    <canvas id="myCanvas"></canvas>
+</head>
+<body>
+    <div class="login-container">
+        <form id="login-form">
+            <label id="txt" >UserName</label><br>
+            <input type="text" placeholder="Username" id="username" required><br>
+            <label  >Password</label><br>
+            <input type="password" placeholder="Password" id="password" required><br>
+            <label>Your Photo</label><br>
+            <input type="file" id="profile-image" accept="image/*"><br>
+            <button type="submit">Get Card</button>
+        </form>
+    </div>
+
+    <script>
+        window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+
+        window.onload = function () {
+            setTimeout(init, 0);
+        };
+
+        var canvas, ctx, mouse, particles, time;
+
+        function init() {
+            canvas = document.querySelector('canvas');
+            ctx = canvas.getContext('2d');
+
+            window.onresize = function () {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+            };
+
+            window.onresize();
+            mouse = {x: canvas.width / 2, y: canvas.height / 2, out: false};
+
+            canvas.onmouseout = function () {
+                mouse.out = true;
+            };
+
+            canvas.onmousemove = function (e) {
+                var rect = canvas.getBoundingClientRect();
+                mouse = {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top,
+                    out: false
+                };
+            };
+
+            gravitySrength = 10;
+            particles = [];
+            spawnTimer = 0;
+            spawnInterval = 10;
+            type = 0;
+            requestAnimationFrame(startLoop);
+        }
+
+        function newParticle() {
+            type = type ? 0 : 1;
+            particles.push({
+                x: mouse.x,
+                y: mouse.y,
+                xv: type ? 18 * Math.random() - 9 : 24 * Math.random() - 12,
+                yv: type ? 18 * Math.random() - 9 : 24 * Math.random() - 12,
+
+                c: type ? 'rgb(255, ' + ((200 * Math.random()) | 0) + ',' + ((80 * Math.random()) | 0) + ')' : 'rgb(255,255,255)',
+
+                s: type ? 5 + 10 * Math.random() : 1,
+                a: 1
+            });
+        }
+
+        function startLoop(newTime) {
+            time = newTime;
+            requestAnimationFrame(loop);
+        }
+
+        function loop(newTime) {
+            draw();
+            calculate(newTime);
+            requestAnimationFrame(loop);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                ctx.globalAlpha = p.a;
+                ctx.fillStyle = p.c;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.s, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+
+        function calculate(newTime) {
+            var dt = newTime - time;
+            time = newTime;
+            if (!mouse.out) {
+                spawnTimer += (dt < 100) ? dt : 100;
+                for (; spawnTimer > 0; spawnTimer -= spawnInterval) {
+                    newParticle();
+                }
+            }
+
+            particleOverflow = particles.length - 700;
+            if (particleOverflow > 0) {
+                particles.splice(0, particleOverflow);
+            }
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                if (!mouse.out) {
+                    var x = mouse.x - p.x;
+                    var y = mouse.y - p.y;
+
+                    var a = x * x + y * y;
+
+                    a = a > 100 ? gravitySrength / a : gravitySrength / 100;
+                    p.xv = (p.xv + a * x) * 0.99;
+                    p.yv = (p.yv + a * y) * 0.99;
+                }
+                p.x += p.xv;
+                p.y += p.yv;
+                p.a *= 0.99;
+            }
+
+        }
+
+        // Handle login form submission
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
+            var profileImage = document.getElementById('profile-image').files[0];
+
+            // Perform login validation here
+           
+            if (password == "birthday") {
+                // Store the username and profile image in session storage
+                sessionStorage.setItem('username', username);
+                var reader = new FileReader();
+                reader.onload = function(event) {
+                    sessionStorage.setItem('profileImage', event.target.result);
+                    // Redirect to welcome page
+                    window.location.href = 'bdayCard.html';
+                };
+                reader.readAsDataURL(profileImage);
+            } else {
+                alert('Please fill all fields and upload a profile picture');
+            }
+        });
+
+    </script>
+</body>
+</html>
